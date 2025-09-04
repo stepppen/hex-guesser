@@ -4,3 +4,12 @@
 .background-red{
     background-color: green;
 }
+.main-title{
+    font-size: 1.5rem;
+    font-weight: 600;
+    padding: 1rem 0;
+    text-align: center;
+}
+.hex-bubble{
+    min-width: 180px;
+}
