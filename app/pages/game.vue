@@ -1,4 +1,15 @@
 <template>
+    <div class="flex gap-4 justify-center align-center">
+        <div class="flex gap-2 w-full aling-center justify-center py-2">
+            <p>Current score: </p>
+            <p>{{ currentScoreTracker }}</p>
+        </div>
+        <div class="flex gap-2 w-full aling-center justify-center py-2">
+            <p>Highscore: </p>
+            <p>{{ highScoreTracker }}</p>
+        </div>
+
+    </div>
 
                 <div class="flex gap-2">
                     <UButton @click="generateColors()" class="flex align-center justify-center rounded-full">
@@ -28,7 +39,7 @@
                         </div>
                     </div>
                     <div class="w-full">
-                    <UButton @click="goToHome()" class="flex align-center justify-center rounded-full h-8 w-full">
+                    <UButton @click="goToHome()" class="flex align-center justify-center rounded-full h-8 w-full bg-gray-400 hover:bg-gray-500">
                         To Menu
                     </UButton>
                     </div>
@@ -53,6 +64,8 @@ const gameStarted = ref(false);
 let showHex = ref(false)
 const colorOptions = ref([]);
 let transfered_hex = "";
+let currentScoreTracker = ref(0);
+let highScoreTracker = ref(0);
 
 // onMounted(() => { 
 //     console.log(levelVal.value);
@@ -62,9 +75,11 @@ let transfered_hex = "";
 
 const goToHome = () => { 
     navigateTo("/");
+    localStorage.setItem('lastScore', currentScoreTracker.value);
+    localStorage.setItem('highScore', highScoreTracker.value);
 }
 function generateColors() {
-    showHex.value = false;
+    showHex.value = true;
     gameStarted.value = true
 
     const r = Math.floor(Math.random() * 256);
@@ -198,6 +213,21 @@ function rgbToHex(r, g, b) {
 function checkColor(selected) {
     selectedHex.value = selected;
     showHex.value = true;
+    if(selectedHex.value && selectedHex.value === targetHex.value){ 
+        currentScoreTracker.value += 1;
+    }else{ 
+        currentScoreTracker.value = 0;
+        console.log(currentScoreTracker.value);
+    }
+    highscoreChecker();
+}
+
+
+
+function highscoreChecker(){ 
+    if(currentScoreTracker.value > highScoreTracker.value){ 
+        highScoreTracker.value = currentScoreTracker.value
+    }
 }
 
 </script>
