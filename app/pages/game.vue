@@ -1,53 +1,54 @@
 <template>
+    <div class="w-full">
+        <UButton @click="goToHome()" class="flex align-center justify-center rounded-full h-8 w-full bg-gray-400 hover:bg-gray-500">
+            To Menu
+        </UButton>
+    </div>
     <div class="flex gap-4 justify-center align-center">
-        <div class="flex gap-2 w-full aling-center justify-center py-2">
+        <div class="flex gap-2 w-full align-center justify-center py-2">
             <p>Current score: </p>
             <p>{{ currentScoreTracker }}</p>
         </div>
-        <div class="flex gap-2 w-full aling-center justify-center py-2">
+        <div class="flex gap-2 w-full align-center justify-center py-2">
             <p>Highscore: </p>
             <p>{{ highScoreTracker }}</p>
         </div>
 
     </div>
+    <div class="adaptive-grid">
+        <div 
+            v-for="(color, index) in colorOptions" 
+            :key="index"
+            class="color-block"
+            :style="{ backgroundColor: gameStarted ? color : '#bababa' }"
+            :class="{
+                'border-4 border-green-500': selectedHex === color && color === targetHex,
+                'border-4 border-red-500': selectedHex === color && color !== targetHex
+            }"
+            @click="checkColor(color)"
+        >
+        <div class="dark:bg-gray-800 bg-white rounded-full">
+            <p v-if="showHex" class="p-2 ">
+                {{ color }}
+            </p>
+        </div>
+        </div>
+    </div>
+    <div class="flex gap-2">
+    <UButton @click="generateColors()" class="flex align-center justify-center rounded-full">
+        Generate
+    </Ubutton>
+    <div class="dark:bg-gray-800 bg-slate-200 p-4 rounded-full hex-bubble h-12 flex flex-col align-center justify-center">
+        <p id="randomNumberDisplay" class="text-center">{{ targetHex }}</p>
+    </div>
+</div>
 
-                <div class="flex gap-2">
-                    <UButton @click="generateColors()" class="flex align-center justify-center rounded-full">
-                        Generate
-                    </Ubutton>
-                    <div class="bg-slate-200 p-4 rounded-full hex-bubble h-12 flex flex-col align-center justify-center">
-                        <p id="randomNumberDisplay" class="text-center">{{ targetHex }}</p>
-                    </div>
-                </div>
-                    <div class="adaptive-grid">
-                        <div 
-                            v-for="(color, index) in colorOptions" 
-                            :key="index"
-                            class="color-block"
-                            :style="{ backgroundColor: gameStarted ? color : '#bababa' }"
-                            :class="{
-                                'border-4 border-green-500': selectedHex === color && color === targetHex,
-                                'border-4 border-red-500': selectedHex === color && color !== targetHex
-                            }"
-                            @click="checkColor(color)"
-                        >
-                        <div class="bg-white rounded-full">
-                            <p v-if="showHex" class="p-2 ">
-                                {{ color }}
-                            </p>
-                        </div>
-                        </div>
-                    </div>
-                    <div class="w-full">
-                    <UButton @click="goToHome()" class="flex align-center justify-center rounded-full h-8 w-full bg-gray-400 hover:bg-gray-500">
-                        To Menu
-                    </UButton>
-                    </div>
 </template>
 
 <script setup>
 import { UButton } from '#components';
 const { levelVal } = useLevel();
+const { highScoreTracker } = useHighscore();
 
 let r = 0;
 let g = 0;
@@ -62,24 +63,33 @@ const targetHex = ref("");
 let selectedHex = ref("")
 const gameStarted = ref(false);
 let showHex = ref(false)
+let roundActive = ref(false)
 const colorOptions = ref([]);
 let transfered_hex = "";
 let currentScoreTracker = ref(0);
-let highScoreTracker = ref(0);
+let highscore = localStorage.getItem(currentScoreTracker);
 
-// onMounted(() => { 
-//     console.log(levelVal.value);
-
-// })
-
+onMounted(() => {
+  const saved = parseInt(localStorage.getItem(`highScore-${levelVal.value}`) || "0", 10);
+  highScoreTracker.value = saved;
+});
 
 const goToHome = () => { 
-    navigateTo("/");
-    localStorage.setItem('lastScore', currentScoreTracker.value);
-    localStorage.setItem('highScore', highScoreTracker.value);
+    console.log("Saving:", {
+        level: levelVal.value,
+        current: currentScoreTracker.value
+    });
+  const saved = parseInt(localStorage.getItem(`highScore-${levelVal.value}`) || "0", 10);
+  if (currentScoreTracker.value > saved) {
+    localStorage.setItem(`highScore-${levelVal.value}`, currentScoreTracker.value.toString());
+    highScoreTracker.value = currentScoreTracker.value;
+  }
+  navigateTo("/");
 }
 function generateColors() {
-    showHex.value = true;
+    roundActive.value = true;
+    console.log(roundActive.value)
+    showHex.value = false;
     gameStarted.value = true
 
     const r = Math.floor(Math.random() * 256);
@@ -141,7 +151,7 @@ function mapValue(value, inMin, inMax, outMin, outMax) {
 }
 
 function getRandomInt(minVal, maxVal) {
-    console.log(minVal, maxVal)
+    // console.log(minVal, maxVal)
   const minCeiled = Math.ceil(minVal);
   const maxFloored = Math.floor(maxVal);
   return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
@@ -211,22 +221,28 @@ function rgbToHex(r, g, b) {
 // }
 
 function checkColor(selected) {
-    selectedHex.value = selected;
-    showHex.value = true;
-    if(selectedHex.value && selectedHex.value === targetHex.value){ 
-        currentScoreTracker.value += 1;
-    }else{ 
-        currentScoreTracker.value = 0;
-        console.log(currentScoreTracker.value);
-    }
-    highscoreChecker();
+    if (roundActive.value){ 
+        selectedHex.value = selected;
+        showHex.value = true;
+        if(selectedHex.value && selectedHex.value === targetHex.value){ 
+            currentScoreTracker.value += 1;
+            highscoreChecker();
+        }else{ 
+            currentScoreTracker.value = 0;
+            console.log(currentScoreTracker.value);
+        }
+    }else return;
+    console.log(roundActive.value);
+    roundActive.value = false;
+    console.log(roundActive.value);
 }
 
 
 
 function highscoreChecker(){ 
-    if(currentScoreTracker.value > highScoreTracker.value){ 
-        highScoreTracker.value = currentScoreTracker.value
+    if(currentScoreTracker.value > highscore){ 
+        highScoreTracker.value = currentScoreTracker.value;
+        highscore = currentScoreTracker.value;
     }
 }
 
